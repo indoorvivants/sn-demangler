@@ -1,8 +1,10 @@
 val Version = new {
   val Scalas = Seq("2.13.6")
+
+  val munit = "0.7.29"
 }
 
-lazy val root = project.in(file(".")).aggregate(demangler.projectRefs: _*)
+lazy val root = projectMatrix.in(file(".")).aggregate(demangler, core)
 
 lazy val demangler =
   projectMatrix
@@ -17,5 +19,5 @@ lazy val core =
     .jvmPlatform(Version.Scalas)
     .nativePlatform(Version.Scalas, Seq(nativeLinkStubs := true))
     .settings(
-      libraryDependencies += "org.scalameta" %%% "munit" % "0.7.29"
+      libraryDependencies += "org.scalameta" %%% "munit" % Version.munit
     )
