@@ -1,20 +1,9 @@
+package com.indoorvivants.demangler
+
 import java.io.File
 import scala.util.Try
 import scala.util.control.NoStackTrace
 import scala.util.control.NonFatal
-
-object Main {
-
-  def main(args: Array[String]): Unit = {
-    val f = scala.io.Source.fromFile(new File("testing_identifiers.txt"))
-
-    f.getLines().foreach { line =>
-      print(s"${line.padTo(50, ' ')} --> ")
-      print(s"   ${Demangler.demangle(line)}")
-      println
-    }
-  }
-}
 
 object Demangler {
   private class CursorWithResult(original: String, acc: StringBuilder) {
@@ -227,3 +216,4 @@ object Demangler {
   }
 
 }
+
