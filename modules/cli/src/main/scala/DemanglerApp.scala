@@ -5,7 +5,7 @@ import scala.util.Try
 import scala.util.control.NoStackTrace
 import scala.util.control.NonFatal
 
-object Main {
+object DemanglerApp {
 
   def main(args: Array[String]): Unit = {
 
@@ -31,7 +31,6 @@ object Main {
     iterator.foreach { line =>
       println(Demangler.demangle(line))
     }
-
   }
 }
 

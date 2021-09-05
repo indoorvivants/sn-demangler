@@ -16,3 +16,6 @@ lazy val core =
     .in(file("modules/core"))
     .jvmPlatform(Version.Scalas)
     .nativePlatform(Version.Scalas, Seq(nativeLinkStubs := true))
+    .settings(
+      libraryDependencies += "org.scalameta" %%% "munit" % "0.7.29"
+    )

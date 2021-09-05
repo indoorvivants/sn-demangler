@@ -4,11 +4,18 @@ import java.io.File
 import scala.util.Try
 import scala.util.control.NoStackTrace
 import scala.util.control.NonFatal
+import scala.collection.mutable.ArrayBuffer
 
 object Demangler {
-  private class CursorWithResult(original: String, acc: StringBuilder) {
+  private class CursorWithResult(
+      original: String,
+      acc: StringBuilder
+  ) {
     private val len = original.length
     private var position = 0
+    private var redirect: StringBuilder = null
+    def setupRedirect(sb: StringBuilder) = redirect = sb
+    def removeRedirect() = redirect = null
     def move =
       if (position < len - 1) { position += 1; this }
       else err("Could not move to next character")
@@ -17,12 +24,12 @@ object Demangler {
     def peek = original(position + 1)
     def current = original(position)
     def append(s: String) = {
-      acc.append(s)
+      (if (redirect == null) acc else redirect).append(s)
       this
     }
 
     def append(c: Char) = {
-      acc.append(c)
+      (if (redirect == null) acc else redirect).append(c)
       this
     }
 
@@ -131,11 +138,31 @@ object Demangler {
       case 'D' =>
         cursor.move
         name(cursor)
-        cursor.append('(')
+        val buf = new ArrayBuffer[StringBuilder]
         while (cursor.current != 'E') {
+          val newSB = new StringBuilder
+          buf.append(newSB)
+          cursor.setupRedirect(newSB)
           type_name(cursor)
-          if (cursor.current == 'E') cursor.append(')')
-          else cursor.append(',')
+          cursor.removeRedirect()
+        }
+
+        if(buf.size == 1) {
+          cursor.append("()")
+          cursor.append(": ")
+          cursor.append(buf.head.result())
+        } else {
+          val (arguments, return_type) = buf.splitAt(buf.size-1)
+          
+          cursor.append('(')
+          var i = 0 
+          while(i < arguments.size) {
+            cursor.append(arguments(i).result())
+            if(i != arguments.size - 1) cursor.append(", ")
+            i+=1
+          }
+          cursor.append(')')
+          cursor.append(": " + return_type.head.result())
         }
 
         cursor.move
@@ -216,4 +243,3 @@ object Demangler {
   }
 
 }
-
