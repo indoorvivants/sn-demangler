@@ -2,3 +2,12 @@
 *.log
 
 modules/*/target
+project/project
+project/target
+project/metals.sbt
+target
+
+.bsp
+.bloop
+.metals
+.vscode

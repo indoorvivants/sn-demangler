@@ -12,17 +12,26 @@ object Demangler {
       acc: StringBuilder
   ) {
     private val len = original.length
+
     private var position = 0
+
     private var redirect: StringBuilder = null
+
     def setupRedirect(sb: StringBuilder) = redirect = sb
+
     def removeRedirect() = redirect = null
+
     def move =
       if (position < len - 1) { position += 1; this }
       else err("Could not move to next character")
+    
     def peekSafe: Option[Char] =
       if (position >= len - 1) None else Some(peek)
+    
     def peek = original(position + 1)
+    
     def current = original(position)
+    
     def append(s: String) = {
       (if (redirect == null) acc else redirect).append(s)
       this
