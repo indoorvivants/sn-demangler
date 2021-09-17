@@ -1,5 +1,7 @@
 # Scala Native name demangler
 
+[![sn-demangler Scala version support](https://index.scala-lang.org/indoorvivants/sn-demangler/sn-demangler/latest-by-scala-version.svg?targetType=Native)](https://index.scala-lang.org/indoorvivants/sn-demangler/sn-demangler) [![sn-demangler-core Scala version support](https://index.scala-lang.org/indoorvivants/sn-demangler/sn-demangler-core/latest-by-scala-version.svg)](https://index.scala-lang.org/indoorvivants/sn-demangler/sn-demangler-core)
+
 Status: sort of works.
 
 # Why?
