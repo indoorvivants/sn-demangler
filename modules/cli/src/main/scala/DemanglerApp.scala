@@ -13,7 +13,8 @@ object DemanglerApp {
     args.headOption match {
       case None =>
         sys.error(
-          "Please specify mode: -f <file>, -s <identifies>, -i for stdin input"
+          "Please specify mode: -f <file>, -s <identifies>, -i for stdin input\n" +
+            "add --skip flag to ignore any errors"
         )
 
       case Some("-f") =>

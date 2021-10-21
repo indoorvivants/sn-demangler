@@ -28,7 +28,37 @@ lazy val demangler =
     )
     .dependsOn(core)
     .jvmPlatform(Version.Scalas)
-    .nativePlatform(Version.Scalas, Seq(nativeLinkStubs := true))
+    .customRow(
+      Version.Scalas,
+      Seq(VirtualAxis.native, OS_Axis.Current),
+      (proj: Project) => {
+        proj
+          .enablePlugins(ScalaNativePlugin)
+          .settings(
+            Seq(
+              nativeLinkStubs := true
+            )
+          )
+      }
+    )
+    .customRow(
+      Version.Scalas,
+      Seq(VirtualAxis.native, OS_Axis.AppleM1),
+      (proj: Project) => {
+        proj
+          .enablePlugins(ScalaNativePlugin)
+          .settings(
+            Seq(
+              nativeLinkStubs := true,
+              nativeConfig ~= {
+                _.withTargetTriple("arm64-apple-darwin20.6.0")
+              },
+              publish / skip := true,
+              publishLocal / skip := true
+            )
+          )
+      }
+    )
 
 lazy val core =
   projectMatrix
