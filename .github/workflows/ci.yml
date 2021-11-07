@@ -21,11 +21,6 @@ jobs:
         with:
           java-version: adopt@1.8
 
-      - name: Setup Scala Native environment
-        run: |
-            sudo apt-get update
-            sudo apt install clang           
-
       - name: Tests
         run: sbt test
 
