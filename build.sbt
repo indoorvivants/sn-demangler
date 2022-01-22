@@ -1,8 +1,8 @@
 Global / onChangedBuildSource := ReloadOnSourceChanges
 
 val Version = new {
-  val Scala3 = Seq("3.1.0")
-  val Scala2 = Seq("2.13.6")
+  val Scala3 = Seq("3.1.1")
+  val Scala2 = Seq("2.13.8")
   val Scalas = Scala2 ++ Scala3
 
   val munit = "0.7.29"
