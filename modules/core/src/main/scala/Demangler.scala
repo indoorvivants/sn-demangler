@@ -24,14 +24,14 @@ object Demangler {
     def move =
       if (position < len - 1) { position += 1; this }
       else err("Could not move to next character")
-    
+
     def peekSafe: Option[Char] =
       if (position >= len - 1) None else Some(peek)
-    
+
     def peek = original(position + 1)
-    
+
     def current = original(position)
-    
+
     def append(s: String) = {
       (if (redirect == null) acc else redirect).append(s)
       this
@@ -156,19 +156,19 @@ object Demangler {
           cursor.removeRedirect()
         }
 
-        if(buf.size == 1) {
+        if (buf.size == 1) {
           cursor.append("()")
           cursor.append(": ")
           cursor.append(buf.head.result())
         } else {
-          val (arguments, return_type) = buf.splitAt(buf.size-1)
-          
+          val (arguments, return_type) = buf.splitAt(buf.size - 1)
+
           cursor.append('(')
-          var i = 0 
-          while(i < arguments.size) {
+          var i = 0
+          while (i < arguments.size) {
             cursor.append(arguments(i).result())
-            if(i != arguments.size - 1) cursor.append(", ")
-            i+=1
+            if (i != arguments.size - 1) cursor.append(", ")
+            i += 1
           }
           cursor.append(')')
           cursor.append(": " + return_type.head.result())

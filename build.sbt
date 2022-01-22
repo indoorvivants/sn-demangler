@@ -1,6 +1,8 @@
+Global / onChangedBuildSource := ReloadOnSourceChanges
+
 val Version = new {
-  val Scala3 = Seq("3.0.2")
-  val Scala2 = Seq("2.13.6")
+  val Scala3 = Seq("3.1.1")
+  val Scala2 = Seq("2.13.8")
   val Scalas = Scala2 ++ Scala3
 
   val munit = "0.7.29"
@@ -11,6 +13,7 @@ lazy val root = projectMatrix
   .aggregate(demangler, core)
   .settings(
     publish / skip := true,
+    Compile / doc / skip := true,
     publishLocal / skip := true
   )
 
@@ -18,20 +21,41 @@ lazy val demangler =
   projectMatrix
     .in(file("modules/cli"))
     .settings(
-      moduleName := "sn-demangler"
+      moduleName := "sn-demangler",
+      Compile / doc / scalacOptions ~= { opts =>
+        opts.filterNot(_.contains("-Xplugin"))
+      }
     )
     .dependsOn(core)
-    .jvmPlatform(Version.Scala2)
-    .nativePlatform(Version.Scala2, Seq(nativeLinkStubs := true))
+    .jvmPlatform(Version.Scalas)
+    .nativePlatform(Version.Scalas, Seq(nativeLinkStubs := true))
 
 lazy val core =
   projectMatrix
     .in(file("modules/core"))
     .settings(moduleName := "sn-demangler-core")
     .jvmPlatform(Version.Scalas)
-    .nativePlatform(Version.Scala2, Seq(nativeLinkStubs := true))
+    .nativePlatform(Version.Scalas, Seq(nativeLinkStubs := true))
     .settings(
-      libraryDependencies += "org.scalameta" %%% "munit" % Version.munit
+      Compile / doc / scalacOptions ~= { opts =>
+        opts.filterNot(_.contains("-Xplugin"))
+      },
+      libraryDependencies += {
+        if (
+          virtualAxes.value.contains(VirtualAxis.native) && scalaVersion.value
+            .startsWith("3.")
+        )
+          ("org.scalameta" % "munit_native0.4_2.13" % Version.munit % Test)
+            .excludeAll(ExclusionRule("org.scala-native"))
+        else "org.scalameta" %%% "munit" % Version.munit % Test
+      },
+      test := {
+        if (
+          virtualAxes.value.contains(VirtualAxis.native) && scalaVersion.value
+            .startsWith("3.")
+        ) ()
+        else (Test / test).value
+      }
     )
 
 inThisBuild(
