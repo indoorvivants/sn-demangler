@@ -2,7 +2,7 @@ package demangler
 
 import com.indoorvivants.demangler.Demangler
 
-class DemanglerSpec extends munit.FunSuite {
+object DemanglerSpec extends verify.BasicTestSuite {
   private def check(symbol: String, result: String) =
     assertEquals(Demangler.demangle(symbol), result)
 

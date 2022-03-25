@@ -1,3 +1,5 @@
+import scala.scalanative.build.LTO
+import scala.scalanative.build.Mode
 Global / onChangedBuildSource := ReloadOnSourceChanges
 
 val Version = new {
@@ -24,6 +26,14 @@ lazy val demangler =
       moduleName := "sn-demangler",
       Compile / doc / scalacOptions ~= { opts =>
         opts.filterNot(_.contains("-Xplugin"))
+      },
+      nativeConfig := {
+        if (sys.env.get("SN_RELEASE").contains("fast"))
+          nativeConfig.value
+            .withMode(Mode.releaseFast)
+            .withOptimize(true)
+            .withLTO(LTO.thin)
+        else nativeConfig.value
       }
     )
     .dependsOn(core)
@@ -40,22 +50,8 @@ lazy val core =
       Compile / doc / scalacOptions ~= { opts =>
         opts.filterNot(_.contains("-Xplugin"))
       },
-      libraryDependencies += {
-        if (
-          virtualAxes.value.contains(VirtualAxis.native) && scalaVersion.value
-            .startsWith("3.")
-        )
-          ("org.scalameta" % "munit_native0.4_2.13" % Version.munit % Test)
-            .excludeAll(ExclusionRule("org.scala-native"))
-        else "org.scalameta" %%% "munit" % Version.munit % Test
-      },
-      test := {
-        if (
-          virtualAxes.value.contains(VirtualAxis.native) && scalaVersion.value
-            .startsWith("3.")
-        ) ()
-        else (Test / test).value
-      }
+      libraryDependencies += "com.eed3si9n.verify" %%% "verify" % "1.0.0" % Test,
+      testFrameworks += new TestFramework("verify.runner.Framework")
     )
 
 inThisBuild(

@@ -9,7 +9,8 @@ import scala.collection.mutable.ArrayBuffer
 object Demangler {
   private class CursorWithResult(
       original: String,
-      acc: StringBuilder
+      acc: StringBuilder,
+      checkComplete: Boolean = false
   ) {
     private val len = original.length
 
@@ -32,6 +33,14 @@ object Demangler {
 
     def current = original(position)
 
+    def match_current(f: PartialFunction[Char, Unit]) = {
+      val curChar = current
+      f.applyOrElse(
+        curChar,
+        (_: Char) => err(s"Match failed for current character '$curChar'")
+      )
+    }
+
     def append(s: String) = {
       (if (redirect == null) acc else redirect).append(s)
       this
@@ -43,7 +52,7 @@ object Demangler {
     }
 
     def result: String = {
-      if (position != len - 1)
+      if (position != len - 1 && checkComplete)
         err("Not the entire string was consumed!")
       else
         acc.result()
@@ -66,8 +75,8 @@ object Demangler {
 
   }
 
-  def demangle(symbol: String) = {
-    val cr = new CursorWithResult(symbol, new StringBuilder)
+  def demangle(symbol: String, checkComplete: Boolean = false) = {
+    val cr = new CursorWithResult(symbol, new StringBuilder, checkComplete)
 
     try {
       Impl.mangled_name(cr)
@@ -91,7 +100,7 @@ object Demangler {
     }
 
     def integer_type_name(cursor: CursorWithResult) = {
-      cursor.current match {
+      cursor.match_current {
         case 'b'   => cursor.append("Byte")
         case 's'   => cursor.append("Short")
         case 'i'   => cursor.append("Int")
@@ -102,9 +111,12 @@ object Demangler {
       cursor.move
     }
 
-    def scope(cursor: CursorWithResult) = cursor.current match {
+    def scope(cursor: CursorWithResult) = cursor.match_current {
       case 'O' => ()
-      case 'P' =>
+      case 'o' => cursor.append("[static]")
+      case 'P' | 'p' =>
+        if (cursor.current == 'p')
+          cursor.append("static ")
         cursor.append("private[")
         defn_name(cursor.move)
         cursor.append("]")
@@ -125,7 +137,11 @@ object Demangler {
       sig_name(cursor)
     }
 
-    def sig_name(cursor: CursorWithResult) = cursor.current match {
+    def sig_name(cursor: CursorWithResult) = cursor.match_current {
+      case 'I' =>
+        cursor.move
+        cursor.append("<static constructor>")
+
       case 'R' =>
         cursor.move
         cursor.append("<constructor>(")
@@ -179,7 +195,7 @@ object Demangler {
         scope(cursor)
     }
 
-    def type_name(cursor: CursorWithResult): Unit = cursor.current match {
+    def type_name(cursor: CursorWithResult): Unit = cursor.match_current {
       case 'v' =>
         cursor.append("<C vararg>")
         cursor.move
@@ -216,7 +232,7 @@ object Demangler {
     }
 
     def nullable_type_name(cursor: CursorWithResult): Unit =
-      cursor.current match {
+      cursor.match_current {
         case 'A' =>
           type_name(cursor.move)
           if (cursor.current != '_')

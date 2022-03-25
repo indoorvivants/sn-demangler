@@ -59,7 +59,7 @@ object DemanglerApp {
   }
 
   private def iterator(it: Iterator[String]): Iterator[String] =
-    it.map(Demangler.demangle)
+    it.map(Demangler.demangle(_))
 
   private def print(it: Iterator[String]): Unit =
     it.foreach(println)

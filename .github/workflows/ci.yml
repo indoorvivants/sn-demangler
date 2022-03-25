@@ -86,6 +86,8 @@ jobs:
 
       - run: sbt demanglerNative/nativeLink
         shell: bash
+        env: 
+          SN_RELEASE: fast
 
       - run: echo $(pwd)
         shell: bash
