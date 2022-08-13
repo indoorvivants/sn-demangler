@@ -96,7 +96,7 @@ jobs:
         uses: actions/upload-artifact@master
         with:
           path: bin/demangler.exe
-          name: sn-demangler-x86_64-pc-win32.exe
+          name: sn-demangler-x86_64-pc-win32
           if-no-files-found: error
 
   release:
@@ -128,14 +128,26 @@ jobs:
       - name: Setup Unix-like
         run: ./.github/setup_unix.sh
 
-      - name: Publish
+      # - name: Publish
+      #   run: |
+      #     sbt ci-release
+      #   env:
+      #     PGP_PASSPHRASE: ${{ secrets.PGP_PASSPHRASE }}
+      #     PGP_SECRET: ${{ secrets.PGP_SECRET }}
+      #     SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
+      #     SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
+
+      - name: Rename binaries 
         run: |
-          sbt ci-release
-        env:
-          PGP_PASSPHRASE: ${{ secrets.PGP_PASSPHRASE }}
-          PGP_SECRET: ${{ secrets.PGP_SECRET }}
-          SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
-          SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
+          cd "${{steps.download.outputs.download-path}}"
+          mv sn-demangler-x86_64-apple-darwin sn-demangler-x86_64-apple-darwin-dir
+          mv sn-demangler-x86_64-apple-darwin-dir/demangler sn-demangler-x86_64-apple-darwin
+
+          mv sn-demangler-x86_64-pc-linux sn-demangler-x86_64-pc-linux-dir
+          mv sn-demangler-x86_64-pc-linux-dir/demangler sn-demangler-x86_64-pc-linux
+
+          mv sn-demangler-x86_64-pc-win32 sn-demangler-x86_64-pc-win32-dir
+          mv sn-demangler-x86_64-pc-win32-dir/demangler.exe sn-demangler-x86_64-pc-win32.exe
 
       - name: Upload release binaries
         uses: softprops/action-gh-release@v1
