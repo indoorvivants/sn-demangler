@@ -12,7 +12,6 @@ env:
 jobs:
   unix_build:
     name: Unix build on ${{ matrix.os }}
-    needs: [unix_build]
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
