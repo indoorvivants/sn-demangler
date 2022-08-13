@@ -3,7 +3,7 @@ import scala.scalanative.build.Mode
 Global / onChangedBuildSource := ReloadOnSourceChanges
 
 val Version = new {
-  val Scala3 = Seq("3.1.1")
+  val Scala3 = Seq("3.1.3")
   val Scala2 = Seq("2.13.8")
   val Scalas = Scala2 ++ Scala3
 
