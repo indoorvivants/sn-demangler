@@ -1,25 +1,24 @@
 import scala.scalanative.build.LTO
 import scala.scalanative.build.Mode
+import demangler.build.Platform
+
 Global / onChangedBuildSource := ReloadOnSourceChanges
-
 val Version = new {
-  val Scala3 = Seq("3.1.3")
-  val Scala2 = Seq("2.13.8")
-  val Scalas = Scala2 ++ Scala3
-
-  val munit = "0.7.29"
+  val Scala3 = "3.1.3"
+  val Scala2 = "2.13.8"
+  val Scalas = Seq(Scala3, Scala2)
 }
 
 lazy val root = projectMatrix
   .in(file("."))
-  .aggregate(demangler, core)
+  .aggregate(cli, core)
   .settings(
     publish / skip := true,
     Compile / doc / skip := true,
     publishLocal / skip := true
   )
 
-lazy val demangler =
+lazy val cli =
   projectMatrix
     .in(file("modules/cli"))
     .settings(
@@ -32,20 +31,22 @@ lazy val demangler =
           nativeConfig.value
             .withMode(Mode.releaseFast)
             .withOptimize(true)
-            .withLTO(LTO.thin)
+            .withLTO(
+              if (Platform.os == Platform.OS.MacOS) LTO.none else LTO.thin
+            )
         else nativeConfig.value
       }
     )
     .dependsOn(core)
     .jvmPlatform(Version.Scalas)
-    .nativePlatform(Version.Scalas, Seq(nativeLinkStubs := true))
+    .nativePlatform(Version.Scalas)
 
 lazy val core =
   projectMatrix
     .in(file("modules/core"))
     .settings(moduleName := "sn-demangler-core")
     .jvmPlatform(Version.Scalas)
-    .nativePlatform(Version.Scalas, Seq(nativeLinkStubs := true))
+    .nativePlatform(Version.Scalas)
     .settings(
       Compile / doc / scalacOptions ~= { opts =>
         opts.filterNot(_.contains("-Xplugin"))
@@ -53,6 +54,19 @@ lazy val core =
       libraryDependencies += "com.eed3si9n.verify" %%% "verify" % "1.0.0" % Test,
       testFrameworks += new TestFramework("verify.runner.Framework")
     )
+
+lazy val buildNativeBinary = taskKey[File]("")
+
+buildNativeBinary := {
+  val built = (cli.native(Version.Scala3) / Compile / nativeLink).value
+  val name =
+    if (Platform.os == Platform.OS.Windows) "demangler.exe" else "demangler"
+  val dest = (ThisBuild / baseDirectory).value / "bin" / name
+
+  IO.copyFile(built, dest)
+
+  dest
+}
 
 inThisBuild(
   Seq(
