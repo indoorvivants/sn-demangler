@@ -31,7 +31,9 @@ lazy val cli =
           nativeConfig.value
             .withMode(Mode.releaseFast)
             .withOptimize(true)
-            .withLTO(LTO.thin)
+            .withLTO(
+              if (Platform.os == Platform.OS.MacOS) LTO.none else LTO.thin
+            )
         else nativeConfig.value
       }
     )

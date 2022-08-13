@@ -20,9 +20,11 @@ jobs:
         include:
           - os: macOS-latest
             uploaded_filename: sn-demangler-x86_64-apple-darwin
+            llvm_bin_path: /usr/local/opt/llvm@13/bin
 
           - os: ubuntu-latest
             uploaded_filename: sn-demangler-x86_64-pc-linux
+            llvm_bin_path: /usr/lib/llvm-13/bin
     steps:
       - uses: actions/checkout@v3
         with:
@@ -39,6 +41,8 @@ jobs:
 
       - name: Test and build binary
         run: sbt --client "test; buildNativeBinary"
+        env:
+          LLVM_BIN: ${{ matrix.llvm_bin_path }}
 
       - uses: actions/upload-artifact@master
         with:
@@ -95,3 +99,46 @@ jobs:
           name: sn-demangler-x86_64-pc-win32.exe
           if-no-files-found: error
 
+  release:
+    needs: [unix_build, windows_build]
+    name: Release
+    if: startsWith(github.ref, 'refs/tags/v') || (github.ref == 'refs/heads/main')
+    runs-on: ubuntu-latest
+    env: 
+      BINARIES: binaries/
+      LLVM_BIN: /usr/lib/llvm-13/bin
+      LLVM_VERSION: 13
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0 
+
+      - uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin' 
+          java-version: '17'
+          cache: 'sbt'
+
+      - name: Download binaries
+        uses: actions/download-artifact@v2
+        with:
+          path: binaries
+
+      - name: Setup Unix-like
+        run: ./.github/setup_unix.sh
+
+      - name: Publish
+        run: |
+          sbt ci-release
+        env:
+          PGP_PASSPHRASE: ${{ secrets.PGP_PASSPHRASE }}
+          PGP_SECRET: ${{ secrets.PGP_SECRET }}
+          SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
+          SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
+
+      - name: Upload release binaries
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: |
+            binaries/*
