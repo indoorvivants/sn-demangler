@@ -4,7 +4,7 @@ import demangler.build.Platform
 
 Global / onChangedBuildSource := ReloadOnSourceChanges
 val Version = new {
-  val Scala3 = "3.2.1"
+  val Scala3 = "3.3.4"
   val Scala2 = "2.13.10"
   val Scalas = Seq(Scala3, Scala2)
 }
