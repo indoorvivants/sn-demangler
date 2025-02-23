@@ -4,8 +4,8 @@ import demangler.build.Platform
 
 Global / onChangedBuildSource := ReloadOnSourceChanges
 val Version = new {
-  val Scala3 = "3.2.1"
-  val Scala2 = "2.13.10"
+  val Scala3 = "3.3.5"
+  val Scala2 = "2.13.16"
   val Scalas = Seq(Scala3, Scala2)
 }
 
@@ -23,9 +23,6 @@ lazy val cli =
     .in(file("modules/cli"))
     .settings(
       moduleName := "sn-demangler",
-      Compile / doc / scalacOptions ~= { opts =>
-        opts.filterNot(_.contains("-Xplugin"))
-      },
       nativeConfig := {
         if (sys.env.get("SN_RELEASE").contains("fast"))
           nativeConfig.value
@@ -47,10 +44,8 @@ lazy val core =
     .settings(moduleName := "sn-demangler-core")
     .jvmPlatform(Version.Scalas)
     .nativePlatform(Version.Scalas)
+    .jsPlatform(Version.Scalas)
     .settings(
-      Compile / doc / scalacOptions ~= { opts =>
-        opts.filterNot(_.contains("-Xplugin"))
-      },
       libraryDependencies += "com.eed3si9n.verify" %%% "verify" % "1.0.0" % Test,
       testFrameworks += new TestFramework("verify.runner.Framework")
     )
