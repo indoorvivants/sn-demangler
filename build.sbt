@@ -1,6 +1,5 @@
 import scala.scalanative.build.LTO
 import scala.scalanative.build.Mode
-import demangler.build.Platform
 
 Global / onChangedBuildSource := ReloadOnSourceChanges
 val Version = new {
@@ -11,16 +10,16 @@ val Version = new {
 
 lazy val root = projectMatrix
   .in(file("."))
-  .aggregate(cli, core)
+  .aggregate(lib, bin)
   .settings(
     publish / skip := true,
     Compile / doc / skip := true,
     publishLocal / skip := true
   )
 
-lazy val cli =
+lazy val bin =
   projectMatrix
-    .in(file("modules/cli"))
+    .in(file("mod/bin"))
     .settings(
       moduleName := "sn-demangler",
       nativeConfig := {
@@ -34,13 +33,13 @@ lazy val cli =
         else nativeConfig.value
       }
     )
-    .dependsOn(core)
+    .dependsOn(lib)
     .jvmPlatform(Version.Scalas)
     .nativePlatform(Version.Scalas)
 
-lazy val core =
+lazy val lib =
   projectMatrix
-    .in(file("modules/core"))
+    .in(file("mod/lib"))
     .settings(moduleName := "sn-demangler-core")
     .jvmPlatform(Version.Scalas)
     .nativePlatform(Version.Scalas)
@@ -50,15 +49,71 @@ lazy val core =
       testFrameworks += new TestFramework("verify.runner.Framework")
     )
 
-lazy val buildNativeBinary = taskKey[File]("")
+import com.indoorvivants.detective.Platform
+lazy val buildBinary = taskKey[File]("")
+buildBinary := {
+  writeBinary(
+    source = (bin.native(Version.Scala3)  / Compile / nativeLink).value,
+    destinationDir = (ThisBuild / baseDirectory).value / "out" / "debug",
+    log = sLog.value,
+    platform = None,
+    debug = true
+  )
+}
 
-buildNativeBinary := {
-  val built = (cli.native(Version.Scala3) / Compile / nativeLink).value
-  val name =
-    if (Platform.os == Platform.OS.Windows) "demangler.exe" else "demangler"
-  val dest = (ThisBuild / baseDirectory).value / "bin" / name
+lazy val buildReleaseBinary = taskKey[File]("")
+buildReleaseBinary := {
+  writeBinary(
+    source = (bin.native(Version.Scala3) / Compile / nativeLinkReleaseFast).value,
+    destinationDir = (ThisBuild / baseDirectory).value / "out" / "release",
+    log = sLog.value,
+    platform = None,
+    debug = false
+  )
+}
 
-  IO.copyFile(built, dest)
+lazy val buildPlatformBinary = taskKey[File]("")
+buildPlatformBinary := {
+  writeBinary(
+    source = (bin.native(Version.Scala3) / Compile / nativeLinkReleaseFast).value,
+    destinationDir = (ThisBuild / baseDirectory).value / "out" / "release",
+    log = sLog.value,
+    platform = Some(Platform.target),
+    debug = false
+  )
+}
+
+val BINARY_NAME = "sn-demangler"
+
+def writeBinary(
+    source: File,
+    destinationDir: File,
+    log: sbt.Logger,
+    platform: Option[Platform.Target],
+    debug: Boolean
+): File = {
+
+  val name = platform match {
+    case None => "app"
+    case Some(target) =>
+      val ext = target.os match {
+        case Platform.OS.Windows => ".exe"
+        case _                   => ""
+      }
+
+      BINARY_NAME + "-" + ArtifactNames.coursierString(target) + ext
+  }
+
+  val dest = destinationDir / name
+
+  IO.copyFile(source, dest, CopyOptions.apply(true, true, true))
+
+  import scala.sys.process.*
+
+  if (debug && platform.exists(_.os == Platform.OS.MacOS))
+    s"dsymutil $dest".!!
+
+  log.info(s"Binary [$name] built in ${dest}")
 
   dest
 }
