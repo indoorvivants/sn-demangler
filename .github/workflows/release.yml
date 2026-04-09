@@ -4,6 +4,10 @@ on:
     branches: ["main"]
     tags: ["v*"]
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   macos_build:
     name: MacOS (${{ matrix.OS }})
@@ -70,7 +74,7 @@ jobs:
     name: Windows
     strategy:
       fail-fast: false
-    runs-on: windows-2019
+    runs-on: windows-2022
     env:
       LLVM_BIN: 'C:\Program Files\LLVM\bin'
       LLVM_VERSION: "17.0.6"
@@ -107,7 +111,7 @@ jobs:
         shell: pwsh
         run: |
           choco install llvm --version="$Env:LLVM_VERSION" --allow-downgrade
-          choco install sbt --version=1.10.7
+          choco install sbt --version=1.12.8
           clang --version
 
       - name: Build binary (windows)
