@@ -12,7 +12,7 @@ https://scala-native.readthedocs.io/en/latest/contrib/mangling.html
 This project parses the mangled name back into a more readable format. It is
 distributed as both a runnable application, and an embeddable library.
 
-Available as a native CLI, as a 
+Available as a native [CLI](#usage), as a [Webapp](https://indoorvivants.github.io/sn-demangler/), and as a normal library published for JVM, JS, and Native.
 
 ## Installation
 
