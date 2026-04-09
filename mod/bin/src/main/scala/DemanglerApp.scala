@@ -5,63 +5,80 @@ import scala.util.Try
 import scala.util.control.NoStackTrace
 import scala.util.control.NonFatal
 import scala.util.matching.Regex
+import java.nio.file.Files
+import java.nio.file.Paths
 
 object DemanglerApp {
 
+  import decline_derive.*
+  @Help("Scala Native demangler")
+  case class Config(
+    @Help("Treat text as name of file (use `-` to read from STDIN)")
+    @Short("f")
+    file: Boolean,
+    @Help("Don't use ASCII colors")
+    plain: Boolean,
+    @Positional("text")
+    text: String
+  ) derives CommandApplication
+
   def main(args: Array[String]): Unit = {
+    val config = CommandApplication.parseOrExit[Config](args)
 
-    args.headOption match {
-      case None =>
-        sys.error(
-          "Please specify mode: -f <file>, -s <identifies>, -i for stdin input"
-        )
+    val input =
+      if config.file then
+        config.text match
+          case "-" => scala.io.Source.stdin.getLines().mkString("\n")
+          case filename => new String(Files.readAllBytes(Paths.get(filename)))
+      else
+        config.text
 
-      case Some("-f") =>
-        args.tail.headOption match {
-          case None    => sys.error("Please specify filename")
-          case Some(f) =>
-            print(iterator(scala.io.Source.fromFile(new File(f)).getLines()))
-        }
+    val plain = config.plain || sys.env.get("TERM").contains("dumb") || sys.env.contains("NO_COLOR")
 
-      case Some("-s") =>
-        print(iterator(args.tail.toIterator))
-
-      case Some("-i") =>
-        print(iterator(Iterator.continually(scala.io.StdIn.readLine())))
-
-      case Some("-ll") =>
-        args.tail.headOption match {
-          case None    => sys.error("Please specify filename")
-          case Some(f) =>
-            val it = scala.io.Source.fromFile(new File(f)).getLines()
-
-            print {
-              it.map { line =>
-                """ "(_S.*?)"  """.trim.r.replaceAllIn(
-                  line,
-                  { m =>
-                    try {
-                      '"' + Regex.quoteReplacement(
-                        Demangler.demangle(m.group(1))
-                      ) + '"'
-                    } catch {
-                      case NonFatal(_) => Regex.quoteReplacement(m.group(0))
-                    }
-                  }
-                )
-              }
-            }
-        }
-      case Some(other) =>
-        sys.error(s"Unreckognized mode $other, choose one of -f, -i, or -s")
+    demangleText(input).foreach {segs =>
+      println(segs.map {s =>
+        if s.highlight then
+          if plain then s.value else Console.YELLOW + s.value + Console.RESET
+        else
+          s.value
+      }.mkString)
     }
-
   }
+}
 
-  private def iterator(it: Iterator[String]): Iterator[String] =
-    it.map(Demangler.demangle(_))
+case class Segment(value: String, highlight: Boolean)
 
-  private def print(it: Iterator[String]): Unit =
-    it.foreach(println)
+def demangleText(text: String) = {
+  val lines = text.split("\n").toList
+  lines.map{ line =>
+      val els = List.newBuilder[Segment]
+      val occs = Demangler.demangleAll(line)
 
+      def addText(from: Int, to: Int) =
+        els += Segment(line.slice(from, to), false)
+
+      def addOcc(d: Demangler.DemangledSymbolInText) =
+        els += Segment(d.name, true)
+
+      if (occs.length > 0) {
+        occs
+          .sliding(2)
+          .toList
+          .foreach {
+            case one :: Nil =>
+              addText(0, one.start - 1)
+              addOcc(one)
+            case one :: two :: Nil =>
+              addOcc(one)
+              addText(one.end + 1, two.start)
+            }
+
+        occs.lastOption.foreach{ occ =>
+          if occs.length > 1 then addOcc(occ)
+          addText(occ.end + 1, line.length)
+        }
+
+        els.result()
+      } else List(Segment(line, false))
+  }
 }

@@ -163,8 +163,8 @@ object Demangler {
       case 'o'       => cursor.append("[static]")
       case 'P' | 'p' =>
         if (cursor.current == 'p')
-          cursor.append("static ")
-        cursor.append("private[")
+          cursor.append(" static")
+        cursor.append(" private[")
         defn_name(cursor.move)
         cursor.append("]")
     }
@@ -197,6 +197,7 @@ object Demangler {
           if (cursor.current == 'E') cursor.append(')')
           else cursor.append(',')
         }
+        cursor.append(")")
 
       case 'C' =>
         cursor.append("<extern> ")

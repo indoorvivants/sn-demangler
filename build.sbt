@@ -34,6 +34,8 @@ lazy val bin =
     .in(file("mod/bin"))
     .settings(
       moduleName := "sn-demangler",
+      run / fork := true,
+      libraryDependencies += "com.indoorvivants" %%% "decline-derive" % "0.3.6",
       nativeLinkReleaseFast / nativeConfig := {
         import com.indoorvivants.detective.*
         nativeConfig.value
@@ -44,7 +46,7 @@ lazy val bin =
       }
     )
     .dependsOn(lib)
-    .jvmPlatform(Version.Scalas)
+    .jvmPlatform(Seq(Version.Scala3))
     .nativePlatform(
       Seq(Version.Scala3),
       Seq.empty,
