@@ -26,7 +26,9 @@ lazy val webapp = projectMatrix
   .dependsOn(lib)
   .jsPlatform(Seq(Version.Scala3))
   .settings(
-    libraryDependencies += "com.raquo" %%% "laminar" % Version.laminar
+    libraryDependencies += "com.raquo" %%% "laminar" % Version.laminar,
+    publish / skip := true,
+    publishLocal / skip := true
   )
 
 lazy val bin =
