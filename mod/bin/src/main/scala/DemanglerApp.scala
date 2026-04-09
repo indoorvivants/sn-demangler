@@ -1,4 +1,4 @@
-package com.indoorvivants.demangler
+package sn_demangler
 
 import java.io.File
 import scala.util.Try
@@ -18,7 +18,7 @@ object DemanglerApp {
 
       case Some("-f") =>
         args.tail.headOption match {
-          case None => sys.error("Please specify filename")
+          case None    => sys.error("Please specify filename")
           case Some(f) =>
             print(iterator(scala.io.Source.fromFile(new File(f)).getLines()))
         }
@@ -31,7 +31,7 @@ object DemanglerApp {
 
       case Some("-ll") =>
         args.tail.headOption match {
-          case None => sys.error("Please specify filename")
+          case None    => sys.error("Please specify filename")
           case Some(f) =>
             val it = scala.io.Source.fromFile(new File(f)).getLines()
 

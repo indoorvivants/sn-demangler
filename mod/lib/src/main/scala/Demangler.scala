@@ -1,4 +1,4 @@
-package com.indoorvivants.demangler
+package sn_demangler
 
 import java.io.File
 import scala.util.Try
@@ -7,20 +7,79 @@ import scala.util.control.NonFatal
 import scala.collection.mutable.ArrayBuffer
 
 object Demangler {
+
+  case class DemangledSymbolInText(
+      val name: String,
+      val start: Int,
+      val end: Int
+  )
+
+  def demangleAll(text: String): List[DemangledSymbolInText] = {
+    var pos = 0
+    val collected = List.newBuilder[DemangledSymbolInText]
+    while (pos < text.length) {
+      val current = text(pos)
+
+      val peekBefore = if (pos > 0) Some(text(pos - 1)) else None
+      val peekAfter = if (pos < text.length - 1) Some(text(pos + 1)) else None
+
+      current match {
+        case '_' if peekAfter.contains('S') => // read
+          val cursor = new CursorWithResult(
+            text,
+            new StringBuilder,
+            checkComplete = false,
+            position = pos
+          )
+          try {
+            Impl.mangled_name(cursor)
+
+            collected += new DemangledSymbolInText(
+              cursor.result,
+              pos,
+              cursor.getPosition
+            )
+            pos = cursor.getPosition
+          } catch {
+            case NonFatal(e) =>
+              pos += 1
+          }
+
+        case _ => pos += 1
+      }
+    }
+
+    collected.result()
+  }
+
+  def demangle(symbol: String, checkComplete: Boolean = false) = {
+    val cr = new CursorWithResult(symbol, new StringBuilder, checkComplete)
+
+    try {
+      Impl.mangled_name(cr)
+
+      cr.result
+    } catch {
+      case NonFatal(e) =>
+        cr.err(e)
+    }
+  }
+
   private class CursorWithResult(
       original: String,
       acc: StringBuilder,
-      checkComplete: Boolean = false
+      checkComplete: Boolean = false,
+      private var position: Int = 0
   ) {
     private val len = original.length
-
-    private var position = 0
 
     private var redirect: StringBuilder = null
 
     def setupRedirect(sb: StringBuilder) = redirect = sb
 
     def removeRedirect() = redirect = null
+
+    def getPosition: Int = position
 
     def move =
       if (position < len - 1) { position += 1; this }
@@ -75,19 +134,6 @@ object Demangler {
 
   }
 
-  def demangle(symbol: String, checkComplete: Boolean = false) = {
-    val cr = new CursorWithResult(symbol, new StringBuilder, checkComplete)
-
-    try {
-      Impl.mangled_name(cr)
-
-      cr.result
-    } catch {
-      case NonFatal(e) =>
-        cr.err(e)
-    }
-  }
-
   private object Impl {
 
     def err(s: String)(implicit cr: CursorWithResult) = throw new Exception(s)
@@ -105,6 +151,7 @@ object Demangler {
         case 's'   => cursor.append("Short")
         case 'i'   => cursor.append("Int")
         case 'j'   => cursor.append("Long")
+        case 'w'   => cursor.append("Size")
         case other => cursor.err(s"Unknown integer type '$other'")
       }
 
@@ -112,8 +159,8 @@ object Demangler {
     }
 
     def scope(cursor: CursorWithResult) = cursor.match_current {
-      case 'O' => ()
-      case 'o' => cursor.append("[static]")
+      case 'O'       => ()
+      case 'o'       => cursor.append("[static]")
       case 'P' | 'p' =>
         if (cursor.current == 'p')
           cursor.append("static ")
@@ -140,11 +187,11 @@ object Demangler {
     def sig_name(cursor: CursorWithResult) = cursor.match_current {
       case 'I' =>
         cursor.move
-        cursor.append("<static constructor>")
+        cursor.append("<clinit>")
 
       case 'R' =>
         cursor.move
-        cursor.append("<constructor>(")
+        cursor.append("<init>(")
         while (cursor.current != 'E') {
           type_name(cursor)
           if (cursor.current == 'E') cursor.append(')')

@@ -1,5 +1,6 @@
-addSbtPlugin("org.scala-native" % "sbt-scala-native" % "0.5.9")
-addSbtPlugin("org.scala-js" % "sbt-scalajs" % "1.20.1")
-addSbtPlugin("com.eed3si9n" % "sbt-projectmatrix" % "0.9.0")
-addSbtPlugin("com.github.sbt" % "sbt-ci-release" % "1.9.2")
-libraryDependencies += "com.indoorvivants.detective" %% "platform" % "0.0.2"
+addSbtPlugin("org.scala-native" % "sbt-scala-native" % "0.5.11")
+addSbtPlugin("org.scala-js" % "sbt-scalajs" % "1.21.0")
+addSbtPlugin("com.eed3si9n" % "sbt-projectmatrix" % "0.11.0")
+addSbtPlugin("com.github.sbt" % "sbt-ci-release" % "1.11.2")
+addSbtPlugin("com.indoorvivants" % "sbt-forge-native-binary" % "0.1.1")
+addSbtPlugin("com.indoorvivants" % "sbt-forge-vite-webapp" % "0.1.1")

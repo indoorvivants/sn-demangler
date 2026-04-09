@@ -3,9 +3,12 @@ import scala.scalanative.build.Mode
 
 Global / onChangedBuildSource := ReloadOnSourceChanges
 val Version = new {
-  val Scala3 = "3.3.5"
-  val Scala2 = "2.13.16"
+  val Scala3 = "3.3.7"
+  val Scala3_Next = "3.8.3"
+  val Scala2 = "2.13.17"
   val Scalas = Seq(Scala3, Scala2)
+  val parsley = "5.0.0-M18"
+  val laminar = "17.2.1"
 }
 
 lazy val root = projectMatrix
@@ -17,25 +20,38 @@ lazy val root = projectMatrix
     publishLocal / skip := true
   )
 
+lazy val webapp = projectMatrix
+  .in(file("mod/webapp"))
+  .enablePlugins(ScalaJSPlugin, ForgeViteWebappPlugin)
+  .dependsOn(lib)
+  .jsPlatform(Seq(Version.Scala3))
+  .settings(
+    libraryDependencies += "com.raquo" %%% "laminar" % Version.laminar
+  )
+
 lazy val bin =
   projectMatrix
     .in(file("mod/bin"))
     .settings(
       moduleName := "sn-demangler",
-      nativeConfig := {
-        if (sys.env.get("SN_RELEASE").contains("fast"))
-          nativeConfig.value
-            .withMode(Mode.releaseFast)
-            .withOptimize(true)
-            .withLTO(
-              if (Platform.os == Platform.OS.MacOS) LTO.none else LTO.thin
-            )
-        else nativeConfig.value
+      nativeLinkReleaseFast / nativeConfig := {
+        import com.indoorvivants.detective.*
+        nativeConfig.value
+          .withOptimize(true)
+          .withLTO(
+            if (Platform.os == Platform.OS.MacOS) LTO.none else LTO.thin
+          )
       }
     )
     .dependsOn(lib)
     .jvmPlatform(Version.Scalas)
-    .nativePlatform(Version.Scalas)
+    .nativePlatform(
+      Seq(Version.Scala3),
+      Seq.empty,
+      _.enablePlugins(ForgeNativeBinaryPlugin).settings(
+        buildBinaryConfig ~= { (_).withName("sn-demangler") }
+      )
+    )
 
 lazy val lib =
   projectMatrix
@@ -45,78 +61,8 @@ lazy val lib =
     .nativePlatform(Version.Scalas)
     .jsPlatform(Version.Scalas)
     .settings(
-      libraryDependencies += "com.eed3si9n.verify" %%% "verify" % "1.0.0" % Test,
-      testFrameworks += new TestFramework("verify.runner.Framework")
+      libraryDependencies += "org.scalameta" %%% "munit" % "1.2.1" % Test
     )
-
-import com.indoorvivants.detective.Platform
-lazy val buildBinary = taskKey[File]("")
-buildBinary := {
-  writeBinary(
-    source = (bin.native(Version.Scala3)  / Compile / nativeLink).value,
-    destinationDir = (ThisBuild / baseDirectory).value / "out" / "debug",
-    log = sLog.value,
-    platform = None,
-    debug = true
-  )
-}
-
-lazy val buildReleaseBinary = taskKey[File]("")
-buildReleaseBinary := {
-  writeBinary(
-    source = (bin.native(Version.Scala3) / Compile / nativeLinkReleaseFast).value,
-    destinationDir = (ThisBuild / baseDirectory).value / "out" / "release",
-    log = sLog.value,
-    platform = None,
-    debug = false
-  )
-}
-
-lazy val buildPlatformBinary = taskKey[File]("")
-buildPlatformBinary := {
-  writeBinary(
-    source = (bin.native(Version.Scala3) / Compile / nativeLinkReleaseFast).value,
-    destinationDir = (ThisBuild / baseDirectory).value / "out" / "release",
-    log = sLog.value,
-    platform = Some(Platform.target),
-    debug = false
-  )
-}
-
-val BINARY_NAME = "sn-demangler"
-
-def writeBinary(
-    source: File,
-    destinationDir: File,
-    log: sbt.Logger,
-    platform: Option[Platform.Target],
-    debug: Boolean
-): File = {
-
-  val name = platform match {
-    case None => "app"
-    case Some(target) =>
-      val ext = target.os match {
-        case Platform.OS.Windows => ".exe"
-        case _                   => ""
-      }
-
-      BINARY_NAME + "-" + ArtifactNames.coursierString(target) + ext
-  }
-
-  val dest = destinationDir / name
-
-  IO.copyFile(source, dest, CopyOptions.apply(true, true, true))
-
-  import scala.sys.process.*
-
-  if (debug && platform.exists(_.os == Platform.OS.MacOS))
-    s"dsymutil $dest".!!
-
-  log.info(s"Binary [$name] built in ${dest}")
-
-  dest
-}
 
 inThisBuild(
   Seq(

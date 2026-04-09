@@ -10,12 +10,12 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        OS: ["macos-13", "macos-14"]
+        OS: ["macos-15", "macos-15-intel"]
     runs-on: ${{ matrix.OS }}
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0 
+          fetch-depth: 0
 
       - name: Setup
         uses: actions/setup-java@v4
@@ -27,7 +27,7 @@ jobs:
       - uses: sbt/setup-sbt@v1
 
       - name: Build the binary
-        run: sbt buildPlatformBinary
+        run: sbt buildBinaryPlatformRelease
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
@@ -44,27 +44,27 @@ jobs:
         OS: ["ubuntu-22.04", "ubuntu-22.04-arm"]
     runs-on: ${{ matrix.OS }}
     steps:
-    - uses: actions/checkout@v4
-      with:
-        fetch-depth: 0 
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-    - uses: actions/setup-java@v4
-      with:
-        distribution: 'temurin' 
-        java-version: '21'
-        cache: 'sbt'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "21"
+          cache: "sbt"
 
-    - uses: sbt/setup-sbt@v1
+      - uses: sbt/setup-sbt@v1
 
-    - name: Build the binary
-      run: sbt buildPlatformBinary
+      - name: Build the binary
+        run: sbt buildBinaryPlatformRelease
 
-    - name: Upload artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        path: out/release/*
-        name: ${{ matrix.os }}-linux-binaries
-        if-no-files-found: error
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          path: out/release/*
+          name: ${{ matrix.os }}-linux-binaries
+          if-no-files-found: error
 
   windows_build:
     name: Windows
@@ -75,20 +75,20 @@ jobs:
       LLVM_BIN: 'C:\Program Files\LLVM\bin'
       LLVM_VERSION: "17.0.6"
     steps:
-      # This step is important to make sure scalafmt 
+      # This step is important to make sure scalafmt
       # checks don't fail
       - name: Setup git config
         run: git config --global core.autocrlf false
 
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0 
+          fetch-depth: 0
 
       - uses: actions/setup-java@v4
         with:
-          distribution: 'temurin' 
-          java-version: '21'
-          cache: 'sbt'
+          distribution: "temurin"
+          java-version: "21"
+          cache: "sbt"
 
       - uses: sbt/setup-sbt@v1
 
@@ -111,7 +111,7 @@ jobs:
           clang --version
 
       - name: Build binary (windows)
-        run: sbt buildPlatformBinary
+        run: sbt buildBinaryPlatformRelease
         shell: cmd
 
       - name: Upload artifacts
@@ -121,15 +121,43 @@ jobs:
           name: windows-binaries
           if-no-files-found: error
 
+  release_webapp:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [linux_build]
+    name: Release webapp
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup
+        uses: actions/setup-java@v4
+        with:
+          java-version: 21
+          distribution: temurin
+          cache: sbt
+
+      - uses: sbt/setup-sbt@v1
+
+      - name: Build the binary
+        run: sbt frontendBuild
+
+      - name: Publish gh-pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./mod/webapp/dist
+
   release:
-    if: startsWith(github.ref, 'refs/tags/v') 
+    if: startsWith(github.ref, 'refs/tags/v')
     needs: [linux_build, windows_build, macos_build]
     name: Upload binaries to release
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0 
+          fetch-depth: 0
 
       - name: Download binaries
         uses: actions/download-artifact@v4

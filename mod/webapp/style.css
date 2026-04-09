@@ -1,0 +1,168 @@
+:root {
+    --bg-base: #f8f9fa;
+    --bg-surface: #fff;
+    --bg-panel: #fff;
+
+    --border-subtle: #e5e7eb;
+    --border-default: #d1d5db;
+    --border-focus: #7f1d1d;
+
+    --text-primary: #111;
+    --text-body: #1a1a1a;
+    --text-muted: #6b7280;
+    --text-faint: #9ca3af;
+
+    --accent: #7f1d1d;
+    --accent-bg: #fff1f1;
+    --accent-border: #fca5a5;
+
+    --focus-ring: rgba(127, 29, 29, 0.12);
+}
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family:
+        -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg-base);
+    color: var(--text-body);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.app-header {
+    padding: 1.5rem 2rem;
+    border-bottom: 1px solid var(--border-subtle);
+    background: var(--bg-surface);
+}
+
+.app-header h1 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    color: var(--text-primary);
+}
+
+.app-header p {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-top: 0.2rem;
+}
+
+.app-container {
+    display: flex;
+    flex-direction: row;
+    gap: 1.5rem;
+    padding: 1.5rem 2rem;
+    flex: 1;
+    min-height: 0;
+}
+
+.panel {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+}
+
+.panel-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-faint);
+    margin-bottom: 0.5rem;
+}
+
+.text-input {
+    flex: 1;
+    width: 100%;
+    min-height: 400px;
+    padding: 1rem;
+    font-family:
+        "SF Mono", "Fira Code", "Cascadia Code", Menlo, Monaco, monospace;
+    font-size: 0.8rem;
+    line-height: 1.6;
+    color: var(--text-body);
+    background: var(--bg-panel);
+    border: 1px solid var(--border-default);
+    border-radius: 8px;
+    resize: vertical;
+    outline: none;
+    transition: border-color 0.15s;
+}
+
+.text-input:focus {
+    border-color: var(--border-focus);
+    box-shadow: 0 0 0 3px var(--focus-ring);
+}
+
+.demangled-text {
+    flex: 1;
+    min-height: 400px;
+    background: var(--bg-panel);
+    border: 1px solid var(--border-default);
+    border-radius: 8px;
+    overflow: auto;
+}
+
+.demangled-text pre {
+    padding: 1rem;
+    font-family:
+        "SF Mono", "Fira Code", "Cascadia Code", Menlo, Monaco, monospace;
+    font-size: 0.8rem;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    word-break: break-all;
+}
+
+.demangled-text code {
+    display: block;
+}
+
+span.demangled-symbol {
+    background: var(--accent-bg);
+    color: var(--accent);
+    border: 1px solid var(--accent-border);
+    padding: 1px;
+    border-radius: 2px;
+    display: inline-block;
+}
+
+.app-footer {
+    padding: 1rem 2rem;
+    border-top: 1px solid var(--border-subtle);
+    background: var(--bg-surface);
+    font-size: 0.75rem;
+    color: var(--text-faint);
+    text-align: center;
+}
+
+.app-footer a {
+    color: var(--accent);
+    text-decoration: none;
+}
+
+.app-footer a:hover {
+    text-decoration: underline;
+}
+
+@media (max-width: 768px) {
+    .app-container {
+        flex-direction: column;
+        padding: 1rem;
+        gap: 1rem;
+    }
+
+    .text-input,
+    .demangled-text {
+        min-height: 250px;
+    }
+}
