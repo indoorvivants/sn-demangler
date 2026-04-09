@@ -81,7 +81,7 @@ def demangleText(text: String) =
       if occs.length > 0 then
         var curPos = 0
         occs.foreach: occ =>
-          addText(curPos, occ.start - 1)
+          addText(curPos, occ.start)
           addOcc(occ)
           curPos = occ.end + 1
 
