@@ -61,22 +61,14 @@ def demangleText(text: String) = {
         els += Segment(d.name, true)
 
       if (occs.length > 0) {
-        occs
-          .sliding(2)
-          .toList
-          .foreach {
-            case one :: Nil =>
-              addText(0, one.start - 1)
-              addOcc(one)
-            case one :: two :: Nil =>
-              addOcc(one)
-              addText(one.end + 1, two.start)
-            }
+        var curPos = 0
+        occs.foreach: occ =>
+          addText(curPos, occ.start - 1)
+          addOcc(occ)
+          curPos = occ.end + 1
 
-        occs.lastOption.foreach{ occ =>
-          if occs.length > 1 then addOcc(occ)
+        occs.lastOption.foreach: occ =>
           addText(occ.end + 1, line.length)
-        }
 
         els.result()
       } else List(Segment(line, false))

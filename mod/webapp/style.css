@@ -133,7 +133,7 @@ span.demangled-symbol {
     border: 1px solid var(--accent-border);
     padding: 1px;
     border-radius: 2px;
-    display: inline-block;
+    display: inline;
 }
 
 .app-footer {

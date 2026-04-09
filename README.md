@@ -2,7 +2,6 @@
 
 [![sn-demangler Scala version support](https://index.scala-lang.org/indoorvivants/sn-demangler/sn-demangler/latest-by-scala-version.svg?targetType=Native)](https://index.scala-lang.org/indoorvivants/sn-demangler/sn-demangler) [![sn-demangler-core Scala version support](https://index.scala-lang.org/indoorvivants/sn-demangler/sn-demangler-core/latest-by-scala-version.svg)](https://index.scala-lang.org/indoorvivants/sn-demangler/sn-demangler-core)
 
-Status: sort of works.
 
 # Why?
 
@@ -13,17 +12,53 @@ https://scala-native.readthedocs.io/en/latest/contrib/mangling.html
 This project parses the mangled name back into a more readable format. It is
 distributed as both a runnable application, and an embeddable library.
 
-## Application
+## Installation
 
-Launch the JVM version using coursier:
+- Download the native `sn-demangler` binary for your platform from [Github Releases](https://github.com/indoorvivants/sn-demangler/releases/latest)
+- Use the [Web version](https://indoorvivants.github.io/sn-demangler/)
+- Launch the JVM version directly from Coursier:
+  ```
+  cs launch com.indoorvivants::sn-demangler:latest.release -- <args>
+  ```
+
+## Usage
+
+Demangler will attempt to find all SN identifiers, demangle them, and display the 
+symbols inline with the rest of the text.
+
+Let's say you have text like this:
 
 ```
-$ cs launch com.indoorvivants::sn-demangler:latest.release -- -s '_SM36scala.scalanative.runtime.BoxedUnit$G8instance' '_SM34scala.scalanative.runtime.package$D16throwNullPointernEO'
-
-// scala.scalanative.runtime.BoxedUnit$.<generated> instance
-// scala.scalanative.runtime.package$.throwNullPointer(): Nothing
+hello _SM36scala.scalanative.runtime.BoxedUnit$G8instance world
 ```
 
-* `-s id1 id2 id3 ...` accepts any number of identifiers
-* `-f <filename>` - processes a file, assuming a single identifier per line
-* `-i` - accepts input from stdin
+The demangled symbols will be highlighted in the console (disable that with `--plain` or set `NO_COLOR=true` env variable).
+
+1. Demangle a single string:
+
+    ```
+    $ sn-demangler 'hello _SM36scala.scalanative.runtime.BoxedUnit$G8instance world'
+    hello scala.scalanative.runtime.BoxedUnit$.<generated> instance world
+    ```
+    
+
+
+2. Demangle a file:
+
+    ```
+    $ cat myfile
+    hello scala.scalanative.runtime.BoxedUnit$.<generated> instance world
+    
+    $ sn-demangler -f myfile
+    hello scala.scalanative.runtime.BoxedUnit$.<generated> instance world
+    ```
+  
+3. Demangle from STDIN:
+
+    ```
+    $ cat myfile
+    hello scala.scalanative.runtime.BoxedUnit$.<generated> instance world
+    
+    $ cat myfile | sn-demangler -f -
+    hello scala.scalanative.runtime.BoxedUnit$.<generated> instance world
+    ```
